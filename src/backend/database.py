@@ -216,8 +216,8 @@ initial_teachers = [
 
 initial_announcements = [
     {
-        "message": "Activity registration is open until the end of the month. Secure your spot now!",
+        "message": "Activity registration is open! Browse available activities and secure your spot today.",
         "start_date": "2024-01-01",
-        "expiration_date": "2025-12-31"
+        "expiration_date": "2099-12-31"
     }
 ]

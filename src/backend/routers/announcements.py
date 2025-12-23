@@ -141,18 +141,17 @@ def update_announcement(
         "expiration_date": expiration_date
     }
     
+    update_operations = {"$set": update_data}
+    
     if start_date:
-        update_data["start_date"] = start_date
+        update_operations["$set"]["start_date"] = start_date
     else:
         # Remove start_date if it's being cleared
-        announcements_collection.update_one(
-            {"_id": ObjectId(announcement_id)},
-            {"$unset": {"start_date": ""}}
-        )
+        update_operations["$unset"] = {"start_date": ""}
     
     result = announcements_collection.update_one(
         {"_id": ObjectId(announcement_id)},
-        {"$set": update_data}
+        update_operations
     )
     
     if result.matched_count == 0:

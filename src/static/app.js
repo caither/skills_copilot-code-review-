@@ -255,13 +255,6 @@ document.addEventListener("DOMContentLoaded", () => {
   logoutButton.addEventListener("click", logout);
   closeLoginModal.addEventListener("click", closeLoginModalHandler);
 
-  // Close login modal when clicking outside
-  window.addEventListener("click", (event) => {
-    if (event.target === loginModal) {
-      closeLoginModalHandler();
-    }
-  });
-
   // Handle login form submission
   loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -683,13 +676,6 @@ document.addEventListener("DOMContentLoaded", () => {
     closeRegistrationModalHandler
   );
 
-  // Close modal when clicking outside of it
-  window.addEventListener("click", (event) => {
-    if (event.target === registrationModal) {
-      closeRegistrationModalHandler();
-    }
-  });
-
   // Create and show confirmation dialog
   function showConfirmationDialog(message, confirmCallback) {
     // Create the confirmation dialog if it doesn't exist
@@ -915,7 +901,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const currentDate = new Date().toISOString().split("T")[0];
+      const currentDate = new Date().toISOString().split("T")[0]; // Use UTC date for consistency with server
 
       announcements.forEach((announcement) => {
         const isActive =
@@ -1155,14 +1141,20 @@ document.addEventListener("DOMContentLoaded", () => {
     announcementForm.addEventListener("submit", handleAnnouncementFormSubmit);
   }
 
-  // Close announcements modal when clicking outside
+  // ===== END ANNOUNCEMENTS FUNCTIONALITY =====
+
+  // Global click handler for closing modals when clicking outside
   window.addEventListener("click", (event) => {
+    if (event.target === loginModal) {
+      closeLoginModalHandler();
+    }
+    if (event.target === registrationModal) {
+      closeRegistrationModalHandler();
+    }
     if (event.target === announcementsModal) {
       closeAnnouncementsModalHandler();
     }
   });
-
-  // ===== END ANNOUNCEMENTS FUNCTIONALITY =====
 
   // Initialize app
   checkAuthentication();
