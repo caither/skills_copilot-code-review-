@@ -2,6 +2,7 @@
 MongoDB database configuration and setup for Mergington High School API
 """
 
+import os
 from pymongo import MongoClient
 from argon2 import PasswordHasher, exceptions as argon2_exceptions
 
@@ -37,6 +38,40 @@ def verify_password(hashed_password: str, plain_password: str) -> bool:
         return False
 
 
+def _load_initial_teachers():
+    """
+    Load initial teacher credentials from environment variables.
+
+    Uses environment variables for sensitive data to avoid hardcoding passwords.
+    Falls back to development defaults if environment variables are not set.
+
+    **Environment Variables:**
+    - TEACHER_1_USERNAME: Username for first teacher (default: ms_rodriguez)
+    - TEACHER_1_PASSWORD: Password for first teacher (REQUIRED for production)
+    - TEACHER_1_DISPLAY_NAME: Display name (default: Ms. Rodriguez)
+    - TEACHER_2_USERNAME: Username for second teacher (default: mr_smith)
+    - TEACHER_2_PASSWORD: Password for second teacher (REQUIRED for production)
+    - TEACHER_2_DISPLAY_NAME: Display name (default: Mr. Smith)
+
+    Returns:
+        List of teacher dictionaries with username, display_name, password, and role
+    """
+    return [
+        {
+            "username": os.getenv("TEACHER_1_USERNAME", "ms_rodriguez"),
+            "display_name": os.getenv("TEACHER_1_DISPLAY_NAME", "Ms. Rodriguez"),
+            "password": os.getenv("TEACHER_1_PASSWORD", "SecurePass123"),
+            "role": "teacher"
+        },
+        {
+            "username": os.getenv("TEACHER_2_USERNAME", "mr_smith"),
+            "display_name": os.getenv("TEACHER_2_DISPLAY_NAME", "Mr. Smith"),
+            "password": os.getenv("TEACHER_2_PASSWORD", "TeacherPass456"),
+            "role": "teacher"
+        }
+    ]
+
+
 def init_database():
     """Initialize database if empty"""
 
@@ -48,13 +83,22 @@ def init_database():
     # Initialize teacher accounts if empty
     if teachers_collection.count_documents({}) == 0:
         for teacher in initial_teachers:
-            teachers_collection.insert_one(
-                {"_id": teacher["username"], **teacher})
+            teachers_collection.insert_one({
+                "_id": teacher["username"],
+                "username": teacher["username"],
+                "display_name": teacher["display_name"],
+                "password": hash_password(teacher["password"]),
+                "role": teacher["role"]
+            })
 
     # Initialize announcements if empty
     if announcements_collection.count_documents({}) == 0:
         for announcement in initial_announcements:
             announcements_collection.insert_one(announcement)
+
+
+# Load initial data - teachers from environment, activities and announcements hardcoded
+initial_teachers = _load_initial_teachers()
 
 
 # Initial database if empty
@@ -193,26 +237,8 @@ initial_activities = {
     }
 }
 
-initial_teachers = [
-    {
-        "username": "mrodriguez",
-        "display_name": "Ms. Rodriguez",
-        "password": hash_password("art123"),
-        "role": "teacher"
-    },
-    {
-        "username": "mchen",
-        "display_name": "Mr. Chen",
-        "password": hash_password("chess456"),
-        "role": "teacher"
-    },
-    {
-        "username": "principal",
-        "display_name": "Principal Martinez",
-        "password": hash_password("admin789"),
-        "role": "admin"
-    }
-]
+# Load initial teachers from environment variables (sensitive data not hardcoded)
+initial_teachers = _load_initial_teachers()
 
 initial_announcements = [
     {

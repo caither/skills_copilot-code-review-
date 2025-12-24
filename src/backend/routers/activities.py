@@ -2,11 +2,12 @@
 Endpoints for the High School Management System API
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import RedirectResponse
 from typing import Dict, Any, Optional, List
-
-from ..database import activities_collection, teachers_collection
+from backend.config import get_activities_collection, get_teachers_collection
+from pydantic import EmailStr, ValidationError
+import re
 
 router = APIRouter(
     prefix="/activities",
@@ -14,12 +15,47 @@ router = APIRouter(
 )
 
 
+def validate_email(email: str) -> str:
+    """
+    Validate email format to prevent injection issues.
+
+    Uses a comprehensive regex pattern for RFC 5322 standard email validation.
+    While pydantic's EmailStr provides more rigorous validation via email-validator
+    library, this approach is performant and handles common cases effectively.
+
+    Pattern breakdown:
+    - ^[a-zA-Z0-9._%+-]+ : Valid local part characters
+    - @ : Required separator
+    - [a-zA-Z0-9.-]+ : Valid domain characters
+    - \\. : Required dot before TLD
+    - [a-zA-Z]{2,}$ : TLD with minimum 2 letters
+
+    Args:
+        email: Email string to validate
+
+    Returns:
+        Validated email string
+
+    Raises:
+        HTTPException: If email format is invalid
+    """
+    # Regex pattern for email validation (RFC 5322 simplified)
+    email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_pattern, email):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid email format"
+        )
+    return email
+
+
 @router.get("", response_model=Dict[str, Any])
 @router.get("/", response_model=Dict[str, Any])
 def get_activities(
     day: Optional[str] = None,
     start_time: Optional[str] = None,
-    end_time: Optional[str] = None
+    end_time: Optional[str] = None,
+    activities_collection=Depends(get_activities_collection)
 ) -> Dict[str, Any]:
     """
     Get all activities with their details, with optional filtering by day and time
@@ -50,7 +86,7 @@ def get_activities(
 
 
 @router.get("/days", response_model=List[str])
-def get_available_days() -> List[str]:
+def get_available_days(activities_collection=Depends(get_activities_collection)) -> List[str]:
     """Get a list of all days that have activities scheduled"""
     # Aggregate to get unique days across all activities
     pipeline = [
@@ -67,8 +103,17 @@ def get_available_days() -> List[str]:
 
 
 @router.post("/{activity_name}/signup")
-def signup_for_activity(activity_name: str, email: str, teacher_username: Optional[str] = Query(None)):
+def signup_for_activity(
+    activity_name: str,
+    email: str,
+    teacher_username: Optional[str] = Query(None),
+    activities_collection=Depends(get_activities_collection),
+    teachers_collection=Depends(get_teachers_collection)
+) -> Dict[str, str]:
     """Sign up a student for an activity - requires teacher authentication"""
+    # Validate email format
+    validated_email = validate_email(email)
+
     # Check teacher authentication
     if not teacher_username:
         raise HTTPException(
@@ -84,27 +129,39 @@ def signup_for_activity(activity_name: str, email: str, teacher_username: Option
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
+    # Use the validated activity name from database
+    validated_activity_name = activity["_id"]
+
     # Validate student is not already signed up
-    if email in activity["participants"]:
+    if validated_email in activity["participants"]:
         raise HTTPException(
             status_code=400, detail="Already signed up for this activity")
 
     # Add student to participants
     result = activities_collection.update_one(
-        {"_id": activity_name},
-        {"$push": {"participants": email}}
+        {"_id": validated_activity_name},
+        {"$push": {"participants": validated_email}}
     )
 
     if result.modified_count == 0:
         raise HTTPException(
             status_code=500, detail="Failed to update activity")
 
-    return {"message": f"Signed up {email} for {activity_name}"}
+    return {"message": f"Successfully signed up {validated_email} for {validated_activity_name}"}
 
 
-@router.post("/{activity_name}/unregister")
-def unregister_from_activity(activity_name: str, email: str, teacher_username: Optional[str] = Query(None)):
-    """Remove a student from an activity - requires teacher authentication"""
+@router.delete("/{activity_name}/signup")
+def cancel_signup(
+    activity_name: str,
+    email: str,
+    teacher_username: Optional[str] = Query(None),
+    activities_collection=Depends(get_activities_collection),
+    teachers_collection=Depends(get_teachers_collection)
+) -> Dict[str, str]:
+    """Cancel a student's signup for an activity - requires teacher authentication"""
+    # Validate email format
+    validated_email = validate_email(email)
+
     # Check teacher authentication
     if not teacher_username:
         raise HTTPException(
@@ -120,19 +177,70 @@ def unregister_from_activity(activity_name: str, email: str, teacher_username: O
     if not activity:
         raise HTTPException(status_code=404, detail="Activity not found")
 
+    # Use the validated activity name from database
+    validated_activity_name = activity["_id"]
+
     # Validate student is signed up
-    if email not in activity["participants"]:
+    if validated_email not in activity["participants"]:
         raise HTTPException(
             status_code=400, detail="Not registered for this activity")
 
     # Remove student from participants
     result = activities_collection.update_one(
-        {"_id": activity_name},
-        {"$pull": {"participants": email}}
+        {"_id": validated_activity_name},
+        {"$pull": {"participants": validated_email}}
     )
 
     if result.modified_count == 0:
         raise HTTPException(
             status_code=500, detail="Failed to update activity")
 
-    return {"message": f"Unregistered {email} from {activity_name}"}
+    return {"message": f"Canceled signup for {validated_email} from {validated_activity_name}"}
+
+
+@router.post("/{activity_name}/unregister")
+def unregister_from_activity(
+    activity_name: str,
+    email: str,
+    teacher_username: Optional[str] = Query(None),
+    activities_collection=Depends(get_activities_collection),
+    teachers_collection=Depends(get_teachers_collection)
+) -> Dict[str, str]:
+    """Remove a student from an activity - requires teacher authentication"""
+    # Validate email format
+    validated_email = validate_email(email)
+
+    # Check teacher authentication
+    if not teacher_username:
+        raise HTTPException(
+            status_code=401, detail="Authentication required for this action")
+
+    teacher = teachers_collection.find_one({"_id": teacher_username})
+    if not teacher:
+        raise HTTPException(
+            status_code=401, detail="Invalid teacher credentials")
+
+    # Get the activity
+    activity = activities_collection.find_one({"_id": activity_name})
+    if not activity:
+        raise HTTPException(status_code=404, detail="Activity not found")
+
+    # Use the validated activity name from database
+    validated_activity_name = activity["_id"]
+
+    # Validate student is signed up
+    if validated_email not in activity["participants"]:
+        raise HTTPException(
+            status_code=400, detail="Not registered for this activity")
+
+    # Remove student from participants
+    result = activities_collection.update_one(
+        {"_id": validated_activity_name},
+        {"$pull": {"participants": validated_email}}
+    )
+
+    if result.modified_count == 0:
+        raise HTTPException(
+            status_code=500, detail="Failed to update activity")
+
+    return {"message": f"Unregistered {validated_email} from {validated_activity_name}"}
