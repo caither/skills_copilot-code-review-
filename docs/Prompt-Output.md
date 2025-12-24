@@ -139,3 +139,100 @@ FastAPI 應用程式，提供課外活動管理、教師認證和校園公告發
   - 新增数據模型詳細說明
   - 添加了完整的技術棧與快速開始指南
   - 文件結構和內容符合 update-docs-on-code-change.instructions.md 規範要求
+---
+
+### 2025-12-24T15:45:30Z
+
+- **Scope**: docs/ways-of-work/plan/activities-management/test-strategy.md, test-issues-checklist.md, qa-plan.md
+- **Prompt**: 遵循 breakdown-test.prompt.md 規範建立全面的測試規劃、品質保證與測試 Issue 檢查清單
+- **Output**:
+
+#### 1. Test Strategy Document (test-strategy.md)
+
+**核心內容**：
+- 測試策略概述（範圍、目標、風險評估、測試方法）
+- ISTQB 框架實現（5 種測試技術選擇與應用）
+  - 等價分割（Equivalence Partitioning）
+  - 邊界值分析（Boundary Value Analysis）
+  - 決策表測試（Decision Table Testing）
+  - 狀態轉換測試（State Transition Testing）
+  - 經驗式測試（Experience-Based Testing）
+- ISO 25010 品質特性評估
+  - 8 項品質特性優先級矩陣
+  - 每項特性的驗收標準與驗證方法
+  - 關鍵風險識別與緩解策略
+- 測試環境與工具選型
+  - 開發/測試/預發佈環境需求
+  - 測試資料管理策略
+  - CI/CD 整合工作流程
+- 品質門檢與升級程序
+
+#### 2. Quality Assurance Plan (qa-plan.md)
+
+**核心內容**：
+- ISO 25010 品質驗證清單（8 項品質特性詳細驗證範圍）
+  - 功能適合性：100% 受理準則驗證
+  - 性能效率：API <200ms、資料庫 <100ms
+  - 相容性：多瀏覽器/平台支持
+  - 易用性：WCAG 2.1 AA 級合規
+  - 可靠性：99.5% 可用性、零資料丟失
+  - 安全性：0 個關鍵漏洞、OWASP 合規
+  - 可維護性：>80% 代碼覆蓋率
+  - 可移植性：跨平台支持
+- 品質門檢與驗收條件
+  - 進入條件、退出條件、品質指標
+  - 6 個品質門的驗收標準
+- GitHub Issue 品質標準
+  - 模板合規性檢查
+  - 標籤一致性規範
+  - 優先級指定矩陣
+- 依賴驗證與管理
+  - 循環依賴偵測
+  - 關鍵路徑分析
+  - 風險評估
+- 估計精度與審核機制
+
+#### 3. Test Issues Checklist (test-issues-checklist.md)
+
+**核心內容**：
+- 35+ 個測試 Issue 清單，按層級組織：
+  - Test Strategy Issue（1 個）
+  - Unit Test Issues（4 個後端 + 1 個前端）
+  - Integration Test Issues（4 個）
+  - End-to-End Test Issues（5 個，使用 Playwright）
+  - Performance Test Issues（3 個）
+  - Security Test Issues（4 個）
+  - Accessibility Test Issues（3 個）
+  - Regression Test Issues（1 個）
+
+**每個 Issue 包含**：
+- 測試技術與應用方法
+- 具體測試範圍與覆蓋內容
+- ISTQB 與 ISO 25010 映射
+- 優先級、預估工時、依賴關係
+- 明確的驗收標準
+
+**測試優先級矩陣**：
+| 測試類型 | 優先級 | 預估工時 |
+| Unit Tests | P1 | 10 points |
+| Integration Tests | P1 | 8 points |
+| E2E Tests | P1 | 12 points |
+| Security Tests | P1 | 10 points |
+| Performance Tests | P2 | 7 points |
+| Accessibility Tests | P2 | 5.5 points |
+| 總計 | | 55.5 points |
+
+**依賴關係與時間線**：
+- Phase 1: Unit Testing（第 1 週）
+- Phase 2: Integration Testing（第 2 週）
+- Phase 3: E2E Testing（第 3-4 週）
+- Phase 4: Non-Functional Testing（第 3-4 週，並行）
+- Phase 5: Regression & Sign-Off（第 5 週）
+
+- **Notes**:
+  - 根據 breakdown-test.prompt.md 完整實現了 ISTQB 框架與 ISO 25010 標準
+  - 所有文件均符合 GitHub 項目管理最佳實踐
+  - 測試計畫涵蓋了功能、非功能、結構、安全等全方位品質驗證
+  - 提供了明確的風險導向測試策略
+  - 所有 Issue 包含清晰的驗收標準與依賴關係
+  - 計畫總工時 55.5 story points（5-6 週團隊投入）
