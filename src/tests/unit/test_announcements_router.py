@@ -3,7 +3,6 @@
 import pytest
 from datetime import datetime, timedelta
 from fastapi.testclient import TestClient
-from app import app
 
 class TestGetAnnouncements:
     """Test GET /announcements endpoint"""
