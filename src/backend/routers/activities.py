@@ -6,7 +6,6 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import RedirectResponse
 from typing import Dict, Any, Optional, List
 from backend.config import get_activities_collection, get_teachers_collection
-from pydantic import EmailStr, ValidationError
 import re
 
 router = APIRouter(
