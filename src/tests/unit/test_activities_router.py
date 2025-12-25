@@ -1,7 +1,6 @@
 """Unit tests for activities router endpoints"""
 
 import pytest
-from fastapi.testclient import TestClient
 from app import app
 
 
