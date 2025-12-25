@@ -2,8 +2,9 @@
 
 import pytest
 from backend.database import (
-    hash_password, verify_password, init_database,
-    activities_collection, teachers_collection, announcements_collection
+    hash_password,
+    verify_password,
+    init_database,
 )
 
 
