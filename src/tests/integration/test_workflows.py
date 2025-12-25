@@ -1,7 +1,6 @@
 """Integration tests for complete API workflows"""
 
 import pytest
-from fastapi.testclient import TestClient
 
 
 class TestTeacherAuthenticationWorkflow:
